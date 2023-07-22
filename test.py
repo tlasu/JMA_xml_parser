@@ -11,7 +11,7 @@ from subprocess import call
 import datetime as dt
 from pytz import timezone
 from dateutil import parser
-
+#%%
 
 class bousai_Xml:
     def __init__(self,ent,old_data=pd.DataFrame()):
@@ -21,20 +21,24 @@ class bousai_Xml:
         self.new=None
         
         self.parse_xml(ent)
-        self.get_data()
+        try:
+            self.get_data()
+        except:
+            pass
+
         self.check_new_data(old_data)
         
     def parse_xml(self,ent):
         #http://www.data.jma.go.jp/developer/xml/feed/other_l.xmlから取得する情報
-        self.kind   =ent.find('{http://www.w3.org/2005/Atom}title').text
-        self.id     =ent.find('{http://www.w3.org/2005/Atom}id').text
-        self.updated=ent.find('{http://www.w3.org/2005/Atom}updated').text
-        self.content=ent.find('{http://www.w3.org/2005/Atom}content').text
+        self.kind    = ent.find('{http://www.w3.org/2005/Atom}title').text
+        self.id      = ent.find('{http://www.w3.org/2005/Atom}id').text
+        self.updated = ent.find('{http://www.w3.org/2005/Atom}updated').text
+        self.content = ent.find('{http://www.w3.org/2005/Atom}content').text
         
     def get_data(self):
         from dateutil import tz
         UTC = tz.gettz("UTC")
-        #http://www.data.jma.go.jp/developer/xml/feed/other_l.xmlから取得する情報
+        #self.idから取得する情報
         data=rq.get(self.id).content
         root=ET.fromstring(data)
 
@@ -71,27 +75,7 @@ class bousai_Xml:
         r=rq.post(WEBHOOK_URL,json=data,
                   headers={'Content-Type': 'application/json'})
         print(r.status_code)
-# %%
-is_aws_lambda = False
-f = "./sample/extra.xml"
-tree = ET.parse(f)
-root = tree.getroot()
-entrys=root.findall("{http://www.w3.org/2005/Atom}entry")
-target_ent=[]
-for ent in entrys:
-    if (ent.find('{http://www.w3.org/2005/Atom}title').text=="指定河川洪水予報"):
-        target_ent.append(ent)
-# %%
-time_c=dt.datetime.now().strftime("%Y%m%d%H%M")
-target_file="extra"
-of1="latest_flood_{}.json".format(target_file)
-of2="latest_flood_{}.csv".format(target_file)
-of3=time_c+"flood_{}.json".format(target_file)
-of4=time_c+"flood_{}.csv".format(target_file)
 
-#%%
-target_file = "./sample/extra.xml"
-# %%
 def get_ids_old_data():
     """#前回のデータからid一覧のみを取得"""
     try:
@@ -113,9 +97,36 @@ def get_ids_old_data():
         print("get_ids_old_data_error", e)
         return pd.DataFrame()
 # %%
+is_aws_lambda = False
+f = "./sample/extra.xml"
+tree = ET.parse(f)
+root = tree.getroot()
+entrys=root.findall("{http://www.w3.org/2005/Atom}entry")
+target_ent=[]
+for ent in entrys:
+    if (ent.find('{http://www.w3.org/2005/Atom}title').text=="指定河川洪水予報"):
+        target_ent.append(ent)
+
+# %%
+time_c=dt.datetime.now().strftime("%Y%m%d%H%M")
+target_file="extra"
+of1="latest_flood_{}.json".format(target_file)
+of2="latest_flood_{}.csv".format(target_file)
+of3=time_c+"flood_{}.json".format(target_file)
+of4=time_c+"flood_{}.csv".format(target_file)
+#%%
+target_file = "./sample/extra.xml"
+# %%
 old_data=get_ids_old_data()
+target_ent[0].find('{http://www.w3.org/2005/Atom}title').text
+target_ent[0].find('{http://www.w3.org/2005/Atom}id').text
+# data=rq.get(self.id).content
+#%%
+bousai_Xml(target_ent[0]).id
+# %%
 ent_class=[bousai_Xml(a) for a in target_ent]
-out_data=pd.DataFrame([vars(ent_c) for ent_c in ent_class])
+#out_data=pd.DataFrame([vars(ent_c) for ent_c in ent_class])
+
 # %%
 s = out_data.iloc[1]
 for i in out_data.sort_values("EventID").PdfLink:
@@ -201,3 +212,5 @@ https://www.jma.go.jp/bosai/flood/data/pdf/890906000102_20230709235000_n00.pdf
 
 
 hi.findReportDateTime
+
+# %%
